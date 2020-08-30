@@ -21,7 +21,6 @@ if broker.mpublish('mytopic', 0, 'hello from python'):
 
 print(broker.mretrieve('mytopic', 0))
 ```
-<br>
 You may also use it as a normal client:
 ```python
 from mqtls import mqtls
