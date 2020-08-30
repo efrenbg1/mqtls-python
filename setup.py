@@ -8,8 +8,8 @@ setup(
     description='MqTLS client for python',
     author='Efrén Boyarizo',
     author_email='efren@boyarizo.es',
-    url='https://github.com/user/reponame',
-    download_url='https://github.com//reponame/archive/v_01.tar.gz',
+    url='https://github.com/efrenbg1/mqtls-python',
+    download_url='https://github.com/efrenbg1/mqtls-python/archive/0.1.tar.gz',
     keywords=['MqTLS', 'gobroker', 'client'],
     install_requires=[
         'validators',
