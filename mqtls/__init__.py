@@ -2,6 +2,7 @@ import socket
 import ssl
 import threading
 import select
+import time
 
 
 class mqtls:
@@ -12,7 +13,6 @@ class mqtls:
         self._pw = pw
         self._timeout = timeout
         self._socket = None
-        self._context = ssl._create_unverified_context()
         self._broker = None
         self._lock = threading.Lock()
         self._exception = ""
@@ -23,19 +23,18 @@ class mqtls:
         return str(len(string)).zfill(2) + string
 
     def __connect(self):
-        self._socket = socket.create_connection((self._host, self._port))
-        # socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect((self._host, self._port))
         # self._socket.settimeout(10)
-        self._broker = self._context.wrap_socket(
-            self._socket, server_hostname=self._host)
-        #self._broker.connect((self._host, self._port))
+        self._broker = ssl.wrap_socket(self._socket)
+        self._broker.setblocking(0)
         if not self._broker:
             raise Exception("Could not connect to broker!")
         if self._user and self._pw:
             self.__login()
 
     def __login(self):
-        msg = "MQS0" + self.__enc(self._user) + self.__enc(self._pw) + "1"
+        msg = "MQS0" + self.__enc(self._user) + self.__enc(self._pw)
         self.__send(msg)
         rx = self.__receive()
         if rx is None:
@@ -51,35 +50,35 @@ class mqtls:
         self._broker.send(str.encode(data + '\n'))
 
     def __receive(self):
-        buff = b''
-        ready = select.select([self._broker], [], [], self._timeout)
-        if not ready[0]:
-            self._exception = "timed out while waiting for response! Is broker up?"
-            return None
-        try:
-            rx = self._broker.recv(1)
-            while rx != b'\n':
-                if rx == b'':
-                    self._exception = "connection closed by broker"
-                    return None
-                buff += rx
-                if len(buff) > 210:
-                    break
-                rx = self._broker.recv(1)
-            return buff.decode('utf-8')
-        except Exception as e:
-            self._exception = str(e)
-            return None
+        start = time.time()
+        while True:
+            try:
+                rx = self._broker.read(210)
+                if rx != b'':
+                    return rx.decode('utf-8')
+                self._exception = "connection closed by broker"
+                return None
+            except ssl.SSLWantReadError:
+                pass
+            if (time.time()-start) > self._timeout:
+                self._exception = "timed out while waiting for response! Is broker up?"
+                return None
+            time.sleep(0.001)  # Don't block waiting for I/O
 
     def __communicate(self, data):
         with self._lock:
-            # Clean data before communicating
-            while select.select([self._broker], [], [], 0)[0]:
-                self.__receive()
+            # Clean buffer before communicating
+            try:
+                while self._broker.read(210) != b'':
+                    continue
+            except ssl.SSLWantReadError:
+                pass
 
+            start = time.time()
             # Send data and read response
             self.__send(data)
             rx = self.__receive()
+            print(time.time() - start)
 
             # If no data received, retry
             if rx is None:
