@@ -34,7 +34,7 @@ class mqtls:
             self.__login()
 
     def __login(self):
-        msg = "MQS0" + self.__enc(self._user) + self.__enc(self._pw)
+        msg = "MQS0" + self.__enc(self._user) + self.__enc(self._pw) + "1"
         self.__send(msg)
         rx = self.__receive()
         if rx is None:
@@ -73,12 +73,10 @@ class mqtls:
                     continue
             except ssl.SSLWantReadError:
                 pass
-
-            start = time.time()
+            
             # Send data and read response
             self.__send(data)
             rx = self.__receive()
-            print(time.time() - start)
 
             # If no data received, retry
             if rx is None:
