@@ -73,7 +73,7 @@ class mqtls:
                     continue
             except ssl.SSLWantReadError:
                 pass
-            
+
             # Send data and read response
             self.__send(data)
             rx = self.__receive()
@@ -99,8 +99,11 @@ class mqtls:
                 "MqTLS: error in publish ({})".format(self._exception))
         if len(rx) < 4:
             return False
+        if rx[:4] == "MQS6":
+            return True
         if rx[:4] == "MQS1":
             return True
+        return False
 
     def retrieve(self, topic, slot):
         if self._user is None:
@@ -118,6 +121,7 @@ class mqtls:
             return None
         if rx[:4] == "MQS2":
             return rx[6:6+int(rx[4:6])]
+        return None
 
     def muser(self, user):
         msg = "MQS8" + self.__enc(user)
