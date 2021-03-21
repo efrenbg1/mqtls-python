@@ -16,10 +16,10 @@ from mqtls import mqtls
 
 broker = mqtls()
 
-if broker.mpublish('mytopic', 0, 'hello from python'):
+if broker.publish('mytopic', 0, 'hello from python'):
     print("Message sent!")
 
-print(broker.mretrieve('mytopic', 0))
+print(broker.retrieve('mytopic', 0))
 ```
 You may also use it as a normal client:
 ```python

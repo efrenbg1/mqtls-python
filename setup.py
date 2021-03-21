@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setup(
     name='mqtls',
     packages=['mqtls'],
-    version='0.4',
+    version='0.5',
     license='wtfpl',
     description='MqTLS client for python',
     long_description=long_description,
